@@ -2,6 +2,7 @@ import time
 import math
 import cv2
 import numpy as np
+import requests
 
 confid = 0.5
 thresh = 0.5
@@ -13,6 +14,11 @@ vid_path = "./videos/"+vname
 angle_factor = 0.8
 H_zoom_factor = 1.2
 # Calibration needed for each video
+
+def sendAlert(fc):
+    URL = 'https://api.telegram.org/bot1267094673:AAF1kCXYFsWq39w5ydBA4M3TdJs6faXXTiI/sendMessage'
+    PARAMS = {'chat_id':-1001249438210,'text':"🆘 Social distancing violation at frame " + str(fc)}
+    r = requests.get(url = URL, params = PARAMS)
 
 def dist(c1, c2):
     return ((c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2) ** 0.5
@@ -82,6 +88,7 @@ writer = None
 
 fl = 0
 q = 0
+frame_counter = 0
 while True:
 
     (grabbed, frame) = vs.read()
@@ -235,6 +242,8 @@ while True:
             cv2.line(frame, tuple(h[0]), tuple(h[1]), (0, 0, 255), 2)
         for b in s_close_pair:
             cv2.line(frame, tuple(b[0]), tuple(b[1]), (0, 255, 255), 2)
+        if len(s_close_pair) > 0 and frame_counter > 0 and frame_counter %10 == 0:
+            sendAlert(frame_counter)
         FR[0:H, 0:W] = frame
         frame = FR
         cv2.imshow('Social distancing analyser', frame)
@@ -246,6 +255,8 @@ while True:
                                  (frame.shape[1], frame.shape[0]), True)
 
     writer.write(frame)
+    frame_counter += 1
+    print(str(frame_counter) + '\n')
 print("Processing finished: open"+"op_"+vname)
 writer.release()
 vs.release()
